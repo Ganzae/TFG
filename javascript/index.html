@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+
+<title> Basic Mesh Loader </title>
+
+	<script type="text/javascript" src="external/gl-matrix.js"></script>
+	<script type="text/javascript" src="external/litegl.js"></script>
+	<script type="text/javascript" src="js/decimate.js"></script>
+
+
+</head>
+<body>
+
+<div> 
+	Number of triangles to decimate:
+	<br>
+	<input id="decimate-quantity" type="text" name="decimate-quantity" value="0"> 
+</div>
+
+<div id="drop-zone" style="height: 200px; width: 400px; border: 1px solid black;">
+	Drop File
+</div>
+
+<div>
+	<button id="button-decimate" onclick="step()"> Decimate </button>
+<div>
+
+<div>
+	<button id="button-decimate-quantity" onclick="iterate()"> Decimate Quantity </button>
+<div>
+
+<div>
+	<button id="button-download" onclick="downloadFile()"> Download File </button>
+<div>
+
+</body>
+
+	<script type="text/javascript">
+
+		function downloadFile()
+		{
+			decimate.downloadDecimated();
+		}
+
+		function step()
+		{
+
+			decimate.decimateStep();
+
+			console.log(decimate.triangles_container.length);
+		}
+
+		function iterate()
+		{
+			iterations = document.getElementById("decimate-quantity").value;
+			for(it=0;it<iterations;++it)
+			{
+				step();
+			}
+		}
+
+		//Allows to DRAG AND DROP files
+		var dropbox = document.getElementById("drop-zone");
+		dropbox.addEventListener("dragenter", onDragEvent, false);
+		function onDragEvent(evt)
+		{
+			for(var i in evt.dataTransfer.types)
+				if(evt.dataTransfer.types[i] == "Files")
+				{
+					if(evt.type != "dragover") console.log("Drag event: " + evt.type);
+					evt.stopPropagation();
+					evt.preventDefault();
+
+					dropbox.addEventListener("dragexit", onDragEvent, false);
+					dropbox.addEventListener("dragover", onDragEvent, false);
+					dropbox.addEventListener("drop", onDrop, false);
+				}
+		}
+
+		function onDrop(evt)
+		{
+			dropbox.removeEventListener("dragexit", onDragEvent, false);
+			dropbox.removeEventListener("dragover", onDragEvent, false);
+			dropbox.removeEventListener("drop", onDrop, false);
+			//load file in memory
+			onFileDrop(evt);
+		}
+
+		function onFileDrop(evt)
+		{
+			evt.stopPropagation();
+			evt.preventDefault();
+
+			var files = evt.dataTransfer.files;
+			var count = files.length;
+			
+			for(var i=0; i < files.length; i++)
+			{
+				//Remember to check obj extension (not implemented)
+				var file = files[i];
+				console.log("Opening File: " + file.name);
+				var reader = new FileReader();
+				reader.onload = function(e) { 
+					var data = e.target.result;
+					document.getElementById("drop-zone").innerHTML = file.name;
+					decimate = new Decimate(data,document.getElementById("decimate-quantity").value);
+					decimate.extractData();
+					console.log(decimate.geometric_vertices, decimate.texture_vertices,	decimate.vertex_normals, decimate.faces);
+
+				};
+			    reader.readAsText(file);
+			}
+		}
+	</script>
+
+</html>
+
